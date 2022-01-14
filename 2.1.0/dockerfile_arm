@@ -1,0 +1,59 @@
+FROM debian:10.9-slim as builder
+RUN set -eux; \
+    echo "deb http://mirrors.163.com/debian/ buster main non-free contrib" > /etc/apt/sources.list && \    
+    apt-get update && apt-get install -y \
+    wget && \
+    wget https://gitee.com/lee1002/gosu/attach_files/944222/download/gosu-arm64  && \
+#    wget https://cdn-mogdb.enmotech.com/mogdb-media/2.1.0/MogDB-2.1.0-openEuler-arm_64.tar && \ 
+    wget https://cdn-mogdb.enmotech.com/mogdb-media/2.1.0/plugins-2.1.0-openEuler-arm_64.tar.gz && \ 
+    wget https://gitee.com/enmotech/compat-tools/attach_files/943745/download/compat-tools-v2022.01.13.tar && \
+    tar -xf /plugins-2.1.0-openEuler-arm_64.tar.gz
+#    tar -xf MogDB-2.1.0-openEuler-64bit.tar.bz2
+
+FROM debian:10.9-slim
+
+ADD MogDB-2.1.0-openEuler-64bit.tar.bz2 /usr/local/opengauss
+#COPY --from=builder /MogDB-2.1.0-openEuler-64bit.tar.bz2 /tmp
+COPY --from=builder /gosu-arm64  /usr/local/bin/gosu
+COPY --from=builder /plugins-2.1.0-openEuler-arm_64.tar.gz  /tmp
+COPY --from=builder /compat-tools-v2022.01.13.tar  /tmp
+COPY entrypoint.sh /usr/local/bin/
+
+ENV LANG en_US.utf8
+ENV PGDATA /var/lib/opengauss/data
+
+RUN set -eux; \
+    echo "deb http://mirrors.163.com/debian/ buster main non-free contrib" > /etc/apt/sources.list && \
+    apt-get update && apt-get install -y \
+    ca-certificates \
+    libaio-dev \
+    bzip2 \
+    libkeyutils-dev \
+    locales \
+    libnuma-dev \
+    libreadline-dev && \
+    rm -rf /var/lib/apt/lists/*; \ 
+    groupadd -g 70 omm;  \
+    useradd -u 70 -g omm -m -s /bin/bash omm;  \
+    mkdir -p /var/lib/opengauss && \
+    mkdir -p /usr/local/opengauss && \
+    mkdir -p /var/run/opengauss  && \
+    mkdir /docker-entrypoint-initdb.d && \
+    tar -xf /tmp/compat-tools-v2022.01.13.tar -C /home/omm && \
+    tar -xf /tmp/plugins-2.1.0-openEuler-arm_64.tar.gz -C /usr/local/opengauss && \
+    rm -f /tmp/compat-tools-v2022.01.13.tar && \
+    rm -f /tmp/plugins-2.1.0-openEuler-arm_64.tar.gz && \
+    chown omm:omm /var/lib/opengauss /var/run/opengauss /docker-entrypoint-initdb.d /usr/local/opengauss/ /usr/local/opengauss/lib /usr/local/opengauss/lib/postgresql  && \
+    chown -R omm:omm /home/omm /usr/local/opengauss/plugins/* && \
+    sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && locale-gen && \
+    echo "export GAUSSHOME=/usr/local/opengauss"  >> /home/omm/.bashrc && \
+    echo "export PATH=\$GAUSSHOME/bin:\$PATH " >> /home/omm/.bashrc && \
+    echo "export LD_LIBRARY_PATH=\$GAUSSHOME/lib:\$LD_LIBRARY_PATH" >> /home/omm/.bashrc && \
+    echo "export GAUSSLOG=/var/lib/opengauss/data/pg_log" >> /home/omm/.bashrc && \
+    chmod +x /usr/local/bin/gosu && \
+    chmod 755 /usr/local/bin/entrypoint.sh  /usr/local/opengauss/plugins && \
+    ln -s /usr/local/bin/entrypoint.sh / 
+
+ENTRYPOINT ["entrypoint.sh"]
+EXPOSE 5432 
+CMD ["mogdb"]
