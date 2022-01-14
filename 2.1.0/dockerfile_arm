@@ -31,7 +31,9 @@ RUN set -eux; \
     libkeyutils-dev \
     locales \
     libnuma-dev \
-    libreadline-dev && \
+    libreadline-dev \
+    vim  \
+    procps && \
     rm -rf /var/lib/apt/lists/*; \ 
     groupadd -g 70 omm;  \
     useradd -u 70 -g omm -m -s /bin/bash omm;  \
@@ -44,12 +46,15 @@ RUN set -eux; \
     rm -f /tmp/compat-tools-v2022.01.13.tar && \
     rm -f /tmp/plugins-2.1.0-openEuler-arm_64.tar.gz && \
     chown omm:omm /var/lib/opengauss /var/run/opengauss /docker-entrypoint-initdb.d /usr/local/opengauss/ /usr/local/opengauss/lib /usr/local/opengauss/lib/postgresql  && \
-    chown -R omm:omm /home/omm /usr/local/opengauss/plugins/* && \
     sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && locale-gen && \
     echo "export GAUSSHOME=/usr/local/opengauss"  >> /home/omm/.bashrc && \
     echo "export PATH=\$GAUSSHOME/bin:\$PATH " >> /home/omm/.bashrc && \
     echo "export LD_LIBRARY_PATH=\$GAUSSHOME/lib:\$LD_LIBRARY_PATH" >> /home/omm/.bashrc && \
     echo "export GAUSSLOG=/var/lib/opengauss/data/pg_log" >> /home/omm/.bashrc && \
+    echo "\set PROMPT1 'MogDB%R%#'" >> /home/omm/.gsqlrc && \
+    echo "\set PROMPT2 '#'" >> /home/omm/.gsqlrc && \
+    echo "\set PROMPT3 '>'" >> /home/omm/.gsqlrc && \
+    chown -R omm:omm /home/omm  && \
     chmod +x /usr/local/bin/gosu && \
     chmod 755 /usr/local/bin/entrypoint.sh  /usr/local/opengauss/plugins && \
     ln -s /usr/local/bin/entrypoint.sh / 
