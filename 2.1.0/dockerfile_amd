@@ -38,13 +38,14 @@ RUN set -eux; \
     mkdir -p /usr/local/opengauss && \
     mkdir -p /var/run/opengauss  && \
     mkdir /docker-entrypoint-initdb.d && \
+    mkdir -p  /usr/local/opengauss/share/postgresql/contrib && \
     tar -xf /tmp/compat-tools-v2022.01.13.tar -C /home/omm && \
 #    tar -xf /tmp/MogDB-2.1.0-CentOS-64bit.tar.bz2 -C /usr/local/opengauss && \
     tar -xf /tmp/plugins-2.1.0-CentOS-x86_64.tar.gz -C /usr/local/opengauss && \
     rm -f /tmp/plugins-2.1.0-CentOS-x86_64.tar.gz && \
 #    rm -f /tmp/MogDB-2.1.0-CentOS-64bit.tar.bz2 && \
     rm -f /tmp/compat-tools-v2022.01.13.tar && \
-    chown omm:omm /var/lib/opengauss /home/omm /var/run/opengauss /docker-entrypoint-initdb.d /usr/local/opengauss/ /usr/local/opengauss/lib /usr/local/opengauss/lib/postgresql && \
+    chown omm:omm /var/lib/opengauss /home/omm /var/run/opengauss /docker-entrypoint-initdb.d /usr/local/opengauss/ /usr/local/opengauss/lib /usr/local/opengauss/lib/postgresql /usr/local/opengauss/share/postgresql/contrib /usr/local/opengauss/share/postgresql/extension /usr/local/opengauss/bin && \
     locale-gen en_US.UTF-8 && \
     echo "export GAUSSHOME=/usr/local/opengauss"  >> /home/omm/.bashrc && \
     echo "export PATH=\$GAUSSHOME/bin:\$PATH " >> /home/omm/.bashrc && \
