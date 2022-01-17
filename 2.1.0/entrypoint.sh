@@ -199,12 +199,14 @@ docker_setup_db() {
                         CREATE DATABASE :"db" ;
                         create user mogdb with login password :"passwd" ;
                         grant all privileges to mogdb;
-                        \i runMe.sql;
 
 EOSQL
                 echo
         fi
 }
+
+
+
 
 docker_setup_user() {
         if [ -n "$GS_USERNAME" ]; then
@@ -336,6 +338,34 @@ docker_slave_full_backup() {
 
 docker_setup_plugin(){
 cp `find /usr/local/opengauss/plugins -name *.so` /usr/local/opengauss/lib/postgresql/
+cp `find /usr/local/opengauss/plugins -name "*.control" -or -name "*.sql"` /usr/local/opengauss/share/postgresql/extension/
+cp `find /usr/local/opengauss/plugins -name pg_repack -type f -or -name pg_bulkload -type f -or -name postgresql` /usr/local/opengauss/bin/
+cp `find /usr/local/opengauss/plugins -name pg_timestamp.sql -or -name uninstall_pg_timestamp.sql` /usr/local/opengauss/share/postgresql/contrib/
+
+  echo "GS_DB = $GS_DB"
+        if [ "$GS_DB" != 'postgres' ]; then
+                GS_DB= docker_process_sql --dbname postgres --set db="$GS_DB" --set passwd="$GS_PASSWORD" <<-'EOSQL'
+                        create extension dblink;
+                        create extension orafce;
+                        create extension pg_bulkload;
+                        create extension pg_prewarm;
+                        create extension pg_repack;
+                        create extension pg_trgm;
+EOSQL
+                echo
+        fi
+}
+
+docker_setup_compat_tools(){
+  echo "GS_DB = $GS_DB"
+        cd /home/omm/compat-tools-v2022.01.13
+        if [ "$GS_DB" != 'postgres' ]; then
+                GS_DB= docker_process_sql --dbname postgres --set db="$GS_DB" --set passwd="$GS_PASSWORD" <<-'EOSQL'
+                        \i runMe.sql;
+
+EOSQL
+                echo
+        fi
 }
 
 docker_setup_slot() {
@@ -407,6 +437,7 @@ _main() {
                         docker_setup_user
                         docker_setup_rep_user
                         docker_setup_plugin
+                        docker_setup_compat_tools
                         docker_setup_slot
                         docker_process_init_files /docker-entrypoint-initdb.d/*
                         fi
