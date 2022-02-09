@@ -5,9 +5,10 @@ RUN set -eux; \
     wget && \
     wget https://gitee.com/lee1002/gosu/attach_files/944222/download/gosu-arm64  && \
 #    wget https://cdn-mogdb.enmotech.com/mogdb-media/2.1.0/MogDB-2.1.0-openEuler-arm_64.tar && \ 
-    wget https://cdn-mogdb.enmotech.com/mogdb-media/2.1.0/plugins-2.1.0-openEuler-arm_64.tar.gz && \ 
-    wget https://gitee.com/enmotech/compat-tools/attach_files/943745/download/compat-tools-v2022.01.13.tar && \
-    tar -xf /plugins-2.1.0-openEuler-arm_64.tar.gz
+    wget https://cdn-mogdb.enmotech.com/mogdb-media/2.1.0/plugins-openEuler-aarch64-2.1.0.tar.gz && \ 
+    wget https://gitee.com/enmotech/compat-tools/attach_files/948401/download/compat-tools-v2022.01.19.tar && \
+    wget https://gitee.com/enmotech/mogila/attach_files/954052/download/mogila-v1.0.0.bz2 && \
+    tar -xf /plugins-openEuler-aarch64-2.1.0.tar.gz
 #    tar -xf MogDB-2.1.0-openEuler-64bit.tar.bz2
 
 FROM debian:10.9-slim
@@ -15,8 +16,9 @@ FROM debian:10.9-slim
 ADD MogDB-2.1.0-openEuler-64bit.tar.bz2 /usr/local/opengauss
 #COPY --from=builder /MogDB-2.1.0-openEuler-64bit.tar.bz2 /tmp
 COPY --from=builder /gosu-arm64  /usr/local/bin/gosu
-COPY --from=builder /plugins-2.1.0-openEuler-arm_64.tar.gz  /tmp
-COPY --from=builder /compat-tools-v2022.01.13.tar  /tmp
+COPY --from=builder /plugins-openEuler-aarch64-2.1.0.tar.gz  /tmp
+COPY --from=builder /compat-tools-v2022.01.19.tar  /tmp
+COPY --from=builder /mogila-v1.0.0.bz2  /tmp
 COPY entrypoint.sh /usr/local/bin/
 
 ENV LANG en_US.utf8
@@ -42,10 +44,12 @@ RUN set -eux; \
     mkdir -p /var/run/opengauss  && \
     mkdir /docker-entrypoint-initdb.d && \
     mkdir -p  /usr/local/opengauss/share/postgresql/contrib && \
-    tar -xf /tmp/compat-tools-v2022.01.13.tar -C /home/omm && \
-    tar -xf /tmp/plugins-2.1.0-openEuler-arm_64.tar.gz -C /usr/local/opengauss && \
-    rm -f /tmp/compat-tools-v2022.01.13.tar && \
-    rm -f /tmp/plugins-2.1.0-openEuler-arm_64.tar.gz && \
+    tar -xf /tmp/compat-tools-v2022.01.19.tar -C /home/omm && \
+    tar -xf /tmp/mogila-v1.0.0.bz2 -C /home/omm && \
+    tar -xf /tmp/plugins-openEuler-aarch64-2.1.0.tar.gz -C /usr/local/opengauss && \
+    rm -f /tmp/compat-tools-v2022.01.19.tar && \
+    rm -f /tmp/plugins-openEuler-aarch64-2.1.0.tar.gz && \
+    rm -f /tmp/mogila-v1.0.0.bz2 && \
     chown omm:omm /var/lib/opengauss /home/omm /var/run/opengauss /docker-entrypoint-initdb.d /usr/local/opengauss/ /usr/local/opengauss/lib /usr/local/opengauss/lib/postgresql /usr/local/opengauss/share/postgresql/contrib /usr/local/opengauss/share/postgresql/extension /usr/local/opengauss/bin && \
     sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen && locale-gen && \
     echo "export GAUSSHOME=/usr/local/opengauss"  >> /home/omm/.bashrc && \

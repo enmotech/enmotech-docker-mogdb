@@ -193,11 +193,12 @@ docker_process_sql() {
 # uses environment variables for input: GS_DB
 docker_setup_db() {
         echo "GS_DB = $GS_DB"
-        cd /home/omm/compat-tools-v2022.01.13
         if [ "$GS_DB" != 'postgres' ]; then
                 GS_DB= docker_process_sql --dbname postgres --set db="$GS_DB" --set passwd="$GS_PASSWORD" <<-'EOSQL'
                         CREATE DATABASE :"db" ;
                         create user mogdb with login password :"passwd" ;
+                        CREATE DATABASE mogdb;
+                        CREATE DATABASE mogila;
                         grant all privileges to mogdb;
 
 EOSQL
@@ -358,10 +359,25 @@ EOSQL
 
 docker_setup_compat_tools(){
   echo "GS_DB = $GS_DB"
-        cd /home/omm/compat-tools-v2022.01.13
+        cd /home/omm/compat-tools-v2022.01.19
         if [ "$GS_DB" != 'postgres' ]; then
                 GS_DB= docker_process_sql --dbname postgres --set db="$GS_DB" --set passwd="$GS_PASSWORD" <<-'EOSQL'
+                        \o /home/omm/compat-tools.log;
                         \i runMe.sql;
+
+EOSQL
+                echo
+        fi
+}
+
+
+docker_setup_mogila(){
+  echo "GS_DB = $GS_DB"
+        cd /home/omm/mogila-v1.0.0
+        if [ "$GS_DB" != 'postgres' ]; then
+                GS_DB= docker_process_sql --dbname mogila --set db="$GS_DB" --set passwd="$GS_PASSWORD" <<-'EOSQL'
+                        \o /home/omm/mogila.log;
+                        \i mogila-insert-data.sql;
 
 EOSQL
                 echo
@@ -438,6 +454,7 @@ _main() {
                         docker_setup_rep_user
                         docker_setup_plugin
                         docker_setup_compat_tools
+                        docker_setup_mogila
                         docker_setup_slot
                         docker_process_init_files /docker-entrypoint-initdb.d/*
                         fi
